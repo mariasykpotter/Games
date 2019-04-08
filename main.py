@@ -1,79 +1,79 @@
-from game import *
+import game
 
-stryyska_1 = Street('Stryyska')
-kozelnytska_2 = Street('Kozelnytska')
-franka_3 = Street('Franka')
-shevchenka_4 = Street('Shevchenka')
-krakivska_5 = Street('Krakivska')
-shevchenka_6 = Street('Shevchenka')
-franka_7 = Street('Franka')
-kozelnytska_8 = Street('Kozelnytska')
-stryyska_9 = Street('Stryyska')
+kitchen = game.Room('Kitchen')
+kitchen.set_description('My favourite room with frige and food.')
+dining_room = game.Room('Dining Room')
+dining_room.set_description('Small room with big table.')
+bathroom = game.Room('Bathroom')
+bathroom.set_description('Toilet and shower. Thats all.')
+kitchen.room_location(dining_room, 'south')
+dining_room.room_location(kitchen, 'north')
+dining_room.room_location(bathroom, 'west')
+bathroom.room_location(dining_room, 'east')
+zombie = game.Enemy('Ted', 'A stuped zombie')
+zombie.set_conversation('Aaaaaaaarrrr!')
+zombie.set_weakness('sword')
+dining_room.set_character(zombie)
+spider = game.Enemy('Spidy', 'A small spider but so terrible.')
+spider.set_conversation('Now I living here. I must leave.')
+spider.set_weakness('magazine')
+bathroom.set_character(spider)
+sword = game.Item('sword')
+sword.set_description('A long acute sword.')
+bathroom.set_item(sword)
+magazine = game.Item('magazine')
+magazine.set_description('A boring magazine.')
+dining_room.set_item(magazine)
+current_room = kitchen
+bag = []
+dead = False
 
+if __name__ == '__main__':
+    while dead == False:
 
-route = [stryyska_1,
-         kozelnytska_2,
-         franka_3,
-         shevchenka_4,
-         krakivska_5,
-         shevchenka_6,
-         franka_7,
-         kozelnytska_8,
-         stryyska_9]
+        print('\n')
+        current_room.get_details()
 
-lotary = random.choice([True, False])
-separator = '>>>'
-player = Player(input('Hi, player! Please enter your name: '))
-print(separator)
-message = "Hi {}. Welcome to the Lviv traveling game. " \
-          "You have {} in your bag. Let's start.".format(player.name, player.bag)
-print(message)
-print(separator)
-iter = 0
-while not iter < 8 or player.health > 0:
-    player.location = route[iter]
-    if lotary:
-        print('You are lucky at this moment. You found {}. Congrats!'.format(player.location.item))
-        player.bag.append(player.location.item)
-        print('Now in you bag you have {}.'.format(player.bag))
-    print(separator)
-    print('Now you are on {} street. There you met a {}.\n'
-          'He tells you: "{}"'.format(player.location.name.upper(), player.location.character.name,
-                                      player.location.character.answer()))
+        neighbor = current_room.get_character()
+        if neighbor is not None:
+            neighbor.describe()
 
-    print(separator)
-    if player.location.character.name in ['Lort', 'Zbuy', 'Batyar']:
-        if player.location.character.weaknes in player.bag:
-            print('You say: "Say it again to my {}. '
-                  'Go away or you will have big problem. '
-                  'Quickly!"'.format(player.location.character.weaknes))
-            print(separator)
-        elif player.location.character.item in player.bag:
-            command = input('You have {} in your bag. '
-                            'You can got it to him. Want you? Y/n: '.format(player.location.character.item))
-            if command.lower() == 'y':
-                print('Now you don\'t have {}. That was dangerous. But you still whole and healthy.\n'
-                      'Let\'s go to the next street.'.format(player.location.character.item))
-                player.bag.remove(player.location.character.item)
-                print('Now in you bag you have {}.'.format(player.bag))
+        item = current_room.get_item()
+        if item is not None:
+            item.describe()
+
+        command = input('>>> Please, choose next direction: ')
+
+        if command.lower() in ['north', 'south', 'east', 'west']:
+            current_room = current_room.move(command)
+        elif command == 'speak':
+            if neighbor is not None:
+                neighbor.talk()
+        elif command == 'fight':
+            if neighbor is not None:
+                print('Want you to fight with?')
+                fight_with = input()
+                if fight_with in bag:
+                    if neighbor.fight(fight_with) == True:
+                        print('Congratulation, you won this combat!')
+                        current_room.character = None
+                        if neighbor.get_defeated() == 2:
+                            print('Congratulations, you have magic victory!')
+                            dead = True
+                    else:
+                        print('Oh dear, you lost.')
+                        print('That is over of the game')
+                        dead = True
+                else:
+                    print('You don\'t have a ' + fight_with)
             else:
-                player.health -= 1
-                print(
-                    'Oh, no! {} hit you. You have {} lives left'.format(player.location.character.name, player.health))
-                print(separator)
+                print('You don\'t have opponent here')
+        elif command == 'take':
+            if item is not None:
+                print('You put the ' + item.get_name() + ' in your bag')
+                bag.append(item.get_name())
+                current_room.set_item(None)
+            else:
+                print('At this room nothing to take!')
         else:
-            print('The {} beating you. You have a bad day.'.format(player.location.character.name))
-    else:
-        player.health += 1
-        print('Now you have a nice mitting with new friend - {}. He takes you {} lives'.format(player.location.character.name, player.health))
-        print(separator)
-    iter += 1
-    if player.location == stryyska_9:
-        print('CONGRATULATIONS, YOU WON !!!')
-        break
-    elif player.health == 0:
-        print('SORRY, BUT YOU LOSE. Lviv is dengerous city sametimes.')
-        break
-    else:
-        input('Press [ENTER] to walk to the next street:')
-        print(separator)
+            print('I don\'t know how to ' + command)
